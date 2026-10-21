@@ -70,7 +70,7 @@
 
       <hr class="border-gray-100">
 
-      <!-- Dynamic Package Selection & Inclusions -->
+      <!-- Dynamic Package Selection -->
       <div class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Package Selection</h2>
@@ -84,7 +84,6 @@
           </select>
         </div>
 
-        <!-- Dynamic Package Details & Inclusions Box -->
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Package Details & Inclusions</label>
           <div id="inclusionsDisplay" class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center">
@@ -92,27 +91,42 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Volume / Pax *</label>
             <select id="packagePax" onchange="calculateTotal()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
-              <option value="">-- Select Service First --</option>
+              <option value="">-- Select Service --</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Package Rate (PHP)</label>
             <input type="number" id="unitRate" readonly class="w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 text-sm font-semibold text-gray-700">
           </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Quantity</label>
             <input type="number" id="quantity" value="1" min="1" onchange="calculateTotal()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Add-ons / Customization (PHP)</label>
-            <input type="number" id="taxAddons" value="0" min="0" onchange="calculateTotal()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
+        </div>
+
+        <!-- Dynamic Add-ons & Customizations Section -->
+        <div class="pt-2">
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-semibold text-gray-700 uppercase">
+              Add-ons / Customization (PHP)
+            </label>
+            <button type="button" onclick="addAddonRow()" class="bg-rose-100 hover:bg-rose-200 text-rose-900 text-xs font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+              <span>+</span> Add Item
+            </button>
+          </div>
+
+          <!-- Dynamic List Container -->
+          <div id="addonsContainer" class="space-y-2">
+            <!-- Row Template (Initial Empty Row) -->
+            <div class="addon-row flex gap-2 items-center">
+              <input type="text" placeholder="Item Name (e.g. Extra Staff, Custom Cards)" class="addon-desc w-2/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none">
+              <input type="number" placeholder="Amount (₱)" value="0" min="0" oninput="calculateTotal()" class="addon-amount w-1/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-right font-semibold">
+              <button type="button" onclick="removeAddonRow(this)" class="text-gray-400 hover:text-rose-600 font-bold px-1 text-sm">✕</button>
+            </div>
           </div>
         </div>
       </div>
@@ -228,12 +242,10 @@
       paxSelect.innerHTML = '<option value="">-- Select Pax --</option>';
       
       if (service && packageCatalog[service]) {
-        // Display Package Details & Inclusions
         const incText = packageCatalog[service].inclusions || "Standard booth setup and inclusions.";
         inclusionsDisplay.innerText = incText;
         inclusionsDisplay.className = "bg-rose-50 border border-rose-200 rounded-lg p-3 text-xs text-rose-900 font-medium min-h-[42px] flex items-center";
 
-        // Populate Volume / Pax options
         paxSelect.disabled = false;
         paxSelect.classList.remove("bg-gray-50");
         const options = packageCatalog[service].options || {};
@@ -252,11 +264,37 @@
       calculateTotal();
     }
 
+    // Dynamic Add-ons List Functions
+    function addAddonRow() {
+      const container = document.getElementById("addonsContainer");
+      const div = document.createElement("div");
+      div.className = "addon-row flex gap-2 items-center";
+      div.innerHTML = `
+        <input type="text" placeholder="Item Name (e.g. Extra Staff, Custom Cards)" class="addon-desc w-2/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none">
+        <input type="number" placeholder="Amount (₱)" value="0" min="0" oninput="calculateTotal()" class="addon-amount w-1/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-right font-semibold">
+        <button type="button" onclick="removeAddonRow(this)" class="text-gray-400 hover:text-rose-600 font-bold px-1 text-sm">✕</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function removeAddonRow(btn) {
+      const container = document.getElementById("addonsContainer");
+      if (container.children.length > 1) {
+        btn.parentElement.remove();
+      } else {
+        // Reset single remaining row instead of deleting
+        const descInput = btn.parentElement.querySelector(".addon-desc");
+        const amtInput = btn.parentElement.querySelector(".addon-amount");
+        if (descInput) descInput.value = "";
+        if (amtInput) amtInput.value = "0";
+      }
+      calculateTotal();
+    }
+
     function calculateTotal() {
       const service = document.getElementById("serviceSelected").value;
       const pax = document.getElementById("packagePax").value;
       const qty = parseInt(document.getElementById("quantity").value) || 1;
-      const addons = parseFloat(document.getElementById("taxAddons").value) || 0;
       
       let rate = 0;
       if (service && pax && packageCatalog[service] && packageCatalog[service].options && packageCatalog[service].options[pax]) {
@@ -264,7 +302,14 @@
       }
 
       document.getElementById("unitRate").value = rate;
-      const total = (rate * qty) + addons;
+
+      // Sum up all dynamic add-on amounts
+      let totalAddons = 0;
+      document.querySelectorAll(".addon-amount").forEach(input => {
+        totalAddons += parseFloat(input.value) || 0;
+      });
+
+      const total = (rate * qty) + totalAddons;
       document.getElementById("displayTotal").innerText = "₱" + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
@@ -285,6 +330,24 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Submitting...";
 
+      // Calculate total add-on amount & build summary text for notes/sheet
+      let totalAddonsSum = 0;
+      let addonSummaryItems = [];
+
+      document.querySelectorAll(".addon-row").forEach(row => {
+        const desc = row.querySelector(".addon-desc").value.trim();
+        const amt = parseFloat(row.querySelector(".addon-amount").value) || 0;
+        if (amt > 0) {
+          totalAddonsSum += amt;
+          addonSummaryItems.push((desc || "Custom Add-on") + ": ₱" + amt);
+        }
+      });
+
+      let finalNotes = document.getElementById("notes").value.trim();
+      if (addonSummaryItems.length > 0) {
+        finalNotes = "[ADD-ONS: " + addonSummaryItems.join(", ") + "] " + finalNotes;
+      }
+
       const formData = {
         clientName: document.getElementById("clientName").value,
         eventDate: document.getElementById("eventDate").value,
@@ -293,9 +356,9 @@
         packagePax: document.getElementById("packagePax").value,
         unitRate: document.getElementById("unitRate").value,
         quantity: document.getElementById("quantity").value,
-        taxAddons: document.getElementById("taxAddons").value,
+        taxAddons: totalAddonsSum,
         paymentStatus: document.getElementById("paymentStatus").value,
-        notes: document.getElementById("notes").value
+        notes: finalNotes
       };
 
       fetch(scriptUrl, {
