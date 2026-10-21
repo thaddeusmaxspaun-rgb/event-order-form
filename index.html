@@ -36,7 +36,7 @@
             Sync Packages
           </button>
         </div>
-        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages and Pax options live.</p>
+        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages and inclusions live.</p>
       </div>
 
       <!-- Client Details -->
@@ -70,7 +70,7 @@
 
       <hr class="border-gray-100">
 
-      <!-- Dynamic Package & Pax Selection -->
+      <!-- Dynamic Package Selection & Inclusions -->
       <div class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Package Selection</h2>
@@ -84,15 +84,23 @@
           </select>
         </div>
 
+        <!-- Dynamic Package Details & Inclusions Box -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Package Details & Inclusions</label>
+          <div id="inclusionsDisplay" class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center">
+            Select a Service / Booth above to view package details and inclusions.
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Pax / Volume *</label>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Volume / Pax *</label>
             <select id="packagePax" onchange="calculateTotal()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
               <option value="">-- Select Service First --</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Unit Rate (PHP)</label>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Package Rate (PHP)</label>
             <input type="number" id="unitRate" readonly class="w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 text-sm font-semibold text-gray-700">
           </div>
         </div>
@@ -184,7 +192,7 @@
             populateServiceDropdown();
             indicator.innerText = "✓ Live Synced";
             indicator.className = "text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded";
-            status.innerText = "✓ Packages and Pax options synced live from Google Sheets!";
+            status.innerText = "✓ Packages, Inclusions, and Rates synced live!";
             status.className = "text-[11px] text-emerald-600 font-medium";
           } else {
             throw new Error("Invalid format");
@@ -212,24 +220,32 @@
       });
     }
 
-    // Pulls Pax / Volume values from the fetched Google Sheet catalog
     function updatePaxOptions() {
       const service = document.getElementById("serviceSelected").value;
       const paxSelect = document.getElementById("packagePax");
+      const inclusionsDisplay = document.getElementById("inclusionsDisplay");
+      
       paxSelect.innerHTML = '<option value="">-- Select Pax --</option>';
       
       if (service && packageCatalog[service]) {
+        // Display Package Details & Inclusions
+        const incText = packageCatalog[service].inclusions || "Standard booth setup and inclusions.";
+        inclusionsDisplay.innerText = incText;
+        inclusionsDisplay.className = "bg-rose-50 border border-rose-200 rounded-lg p-3 text-xs text-rose-900 font-medium min-h-[42px] flex items-center";
+
+        // Populate Volume / Pax options
         paxSelect.disabled = false;
         paxSelect.classList.remove("bg-gray-50");
-
-        // Loop over the Pax / Volume entries pulled directly from Column D in Google Sheets
-        Object.keys(packageCatalog[service]).forEach(pax => {
+        const options = packageCatalog[service].options || {};
+        Object.keys(options).forEach(pax => {
           const opt = document.createElement("option");
           opt.value = pax;
           opt.innerText = pax;
           paxSelect.appendChild(opt);
         });
       } else {
+        inclusionsDisplay.innerText = "Select a Service / Booth above to view package details and inclusions.";
+        inclusionsDisplay.className = "bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center";
         paxSelect.disabled = true;
         paxSelect.classList.add("bg-gray-50");
       }
@@ -243,8 +259,8 @@
       const addons = parseFloat(document.getElementById("taxAddons").value) || 0;
       
       let rate = 0;
-      if (service && pax && packageCatalog[service] && packageCatalog[service][pax]) {
-        rate = packageCatalog[service][pax];
+      if (service && pax && packageCatalog[service] && packageCatalog[service].options && packageCatalog[service].options[pax]) {
+        rate = packageCatalog[service].options[pax];
       }
 
       document.getElementById("unitRate").value = rate;
@@ -295,6 +311,8 @@
         document.getElementById("bookingForm").reset();
         document.getElementById("webhookUrlInput").value = scriptUrl;
         document.getElementById("displayTotal").innerText = "₱0.00";
+        document.getElementById("inclusionsDisplay").innerText = "Select a Service / Booth above to view package details and inclusions.";
+        document.getElementById("inclusionsDisplay").className = "bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center";
       })
       .catch(err => {
         statusMsg.classList.remove("hidden", "bg-emerald-100", "text-emerald-800");
