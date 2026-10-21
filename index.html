@@ -36,7 +36,7 @@
             Sync Packages
           </button>
         </div>
-        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages live.</p>
+        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages and Pax options live.</p>
       </div>
 
       <!-- Client Details -->
@@ -70,11 +70,11 @@
 
       <hr class="border-gray-100">
 
-      <!-- Dynamic Package Selection -->
+      <!-- Dynamic Package & Pax Selection -->
       <div class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Package Selection</h2>
-          <span id="syncIndicator" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Syncing with Sheet...</span>
+          <span id="syncIndicator" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Syncing...</span>
         </div>
 
         <div>
@@ -88,7 +88,7 @@
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Pax / Volume *</label>
             <select id="packagePax" onchange="calculateTotal()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
-              <option value="">-- Select Pax --</option>
+              <option value="">-- Select Service First --</option>
             </select>
           </div>
           <div>
@@ -125,10 +125,9 @@
           </select>
         </div>
 
-        <!-- Notes Field -->
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Notes / Special Requests</label>
-          <textarea id="notes" rows="3" placeholder="e.g. Preferred scent preferences, venue setup details, or custom branding notes..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none"></textarea>
+          <textarea id="notes" rows="3" placeholder="e.g. Preferred scent choices, venue setup instructions..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none"></textarea>
         </div>
 
         <div class="bg-pink-50 p-4 rounded-xl flex justify-between items-center border border-pink-100">
@@ -185,7 +184,7 @@
             populateServiceDropdown();
             indicator.innerText = "✓ Live Synced";
             indicator.className = "text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded";
-            status.innerText = "✓ Packages synced live from Google Sheets!";
+            status.innerText = "✓ Packages and Pax options synced live from Google Sheets!";
             status.className = "text-[11px] text-emerald-600 font-medium";
           } else {
             throw new Error("Invalid format");
@@ -213,6 +212,7 @@
       });
     }
 
+    // Pulls Pax / Volume values from the fetched Google Sheet catalog
     function updatePaxOptions() {
       const service = document.getElementById("serviceSelected").value;
       const paxSelect = document.getElementById("packagePax");
@@ -221,6 +221,8 @@
       if (service && packageCatalog[service]) {
         paxSelect.disabled = false;
         paxSelect.classList.remove("bg-gray-50");
+
+        // Loop over the Pax / Volume entries pulled directly from Column D in Google Sheets
         Object.keys(packageCatalog[service]).forEach(pax => {
           const opt = document.createElement("option");
           opt.value = pax;
