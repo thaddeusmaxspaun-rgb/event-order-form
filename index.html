@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MemorABBYlia - Dynamic Event Booking Entry</title>
+  <title>MemorABBYlia - Event Booking Entry</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
@@ -113,7 +113,7 @@
 
       <!-- Financial Calculation & Payment Status -->
       <div class="space-y-4">
-        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">3. Payment & Status</h2>
+        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">3. Payment & Notes</h2>
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Payment Status</label>
@@ -123,6 +123,12 @@
             <option>Fully Paid</option>
             <option>Unpaid</option>
           </select>
+        </div>
+
+        <!-- Notes Field -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Notes / Special Requests</label>
+          <textarea id="notes" rows="3" placeholder="e.g. Preferred scent preferences, venue setup details, or custom branding notes..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none"></textarea>
         </div>
 
         <div class="bg-pink-50 p-4 rounded-xl flex justify-between items-center border border-pink-100">
@@ -167,7 +173,6 @@
     function fetchPackagesFromSheet(url) {
       const indicator = document.getElementById("syncIndicator");
       const status = document.getElementById("webhookStatus");
-      const serviceSelect = document.getElementById("serviceSelected");
 
       indicator.innerText = "Syncing...";
       indicator.className = "text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded";
@@ -271,7 +276,8 @@
         unitRate: document.getElementById("unitRate").value,
         quantity: document.getElementById("quantity").value,
         taxAddons: document.getElementById("taxAddons").value,
-        paymentStatus: document.getElementById("paymentStatus").value
+        paymentStatus: document.getElementById("paymentStatus").value,
+        notes: document.getElementById("notes").value
       };
 
       fetch(scriptUrl, {
