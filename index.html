@@ -25,29 +25,24 @@
       
       <!-- Webhook Configuration -->
       <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
-        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-          🔗 Google Sheet Webhook URL
-        </label>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">🔗 Google Sheet Webhook URL</label>
         <div class="flex gap-2">
           <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" required
             class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none">
-          <button type="button" onclick="saveAndSync()" 
-            class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition whitespace-nowrap">
+          <button type="button" onclick="saveAndSync()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition whitespace-nowrap">
             Sync Packages
           </button>
         </div>
-        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages and inclusions live.</p>
+        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages live.</p>
       </div>
 
-      <!-- Client Details -->
+      <!-- 1. Client Details -->
       <div class="space-y-4">
         <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">1. Client Details</h2>
-        
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Client Name *</label>
           <input type="text" id="clientName" required placeholder="e.g. Maria Santos" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
         </div>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Event Date *</label>
@@ -56,13 +51,8 @@
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Event Type *</label>
             <select id="eventType" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
-              <option>Wedding</option>
-              <option>Debut</option>
-              <option>Birthday</option>
-              <option>Corporate</option>
-              <option>Brand Activation</option>
-              <option>Anniversary</option>
-              <option>Private Party</option>
+              <option>Wedding</option><option>Debut</option><option>Birthday</option>
+              <option>Corporate</option><option>Brand Activation</option><option>Anniversary</option><option>Private Party</option>
             </select>
           </div>
         </div>
@@ -70,62 +60,46 @@
 
       <hr class="border-gray-100">
 
-      <!-- Dynamic Package Selection -->
+      <!-- 2. Package & Service Selection (Multi-Service Enabled) -->
       <div class="space-y-4">
         <div class="flex justify-between items-center">
-          <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Package Selection</h2>
-          <span id="syncIndicator" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Syncing...</span>
+          <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Services & Booth Packages</h2>
+          <button type="button" onclick="addServiceBlock()" class="bg-rose-100 hover:bg-rose-200 text-rose-900 text-xs font-bold px-3 py-1 rounded-lg transition">
+            + Add Another Service
+          </button>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Service / Booth *</label>
-          <select id="serviceSelected" onchange="updatePaxOptions()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
-            <option value="">-- Load Webhook First --</option>
-          </select>
-        </div>
+        <div id="servicesContainer" class="space-y-4">
+          <!-- Initial Service Block -->
+          <div class="service-block bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 relative">
+            <button type="button" onclick="removeServiceBlock(this)" class="absolute top-2 right-3 text-gray-400 hover:text-rose-600 font-bold text-sm">✕ Remove</button>
+            
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Service / Booth *</label>
+              <select onchange="updateServiceBlock(this)" class="service-select w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-white" required>
+                <option value="">-- Load Webhook First --</option>
+              </select>
+            </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Package Details & Inclusions</label>
-          <div id="inclusionsDisplay" class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center">
-            Select a Service / Booth above to view package details and inclusions.
-          </div>
-        </div>
+            <div class="inclusions-box bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-500 italic">
+              Select a Service / Booth above to view inclusions.
+            </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Volume / Pax *</label>
-            <select id="packagePax" onchange="calculateTotal()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
-              <option value="">-- Select Service --</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Package Rate (PHP)</label>
-            <input type="number" id="unitRate" readonly class="w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 text-sm font-semibold text-gray-700">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Quantity</label>
-            <input type="number" id="quantity" value="1" min="1" onchange="calculateTotal()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
-          </div>
-        </div>
-
-        <!-- Dynamic Add-ons & Customizations Section -->
-        <div class="pt-2">
-          <div class="flex justify-between items-center mb-2">
-            <label class="block text-xs font-semibold text-gray-700 uppercase">
-              Add-ons / Customization (PHP)
-            </label>
-            <button type="button" onclick="addAddonRow()" class="bg-rose-100 hover:bg-rose-200 text-rose-900 text-xs font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-              <span>+</span> Add Item
-            </button>
-          </div>
-
-          <!-- Dynamic List Container -->
-          <div id="addonsContainer" class="space-y-2">
-            <!-- Row Template (Initial Empty Row) -->
-            <div class="addon-row flex gap-2 items-center">
-              <input type="text" placeholder="Item Name (e.g. Extra Staff, Custom Cards)" class="addon-desc w-2/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none">
-              <input type="number" placeholder="Amount (₱)" value="0" min="0" oninput="calculateTotal()" class="addon-amount w-1/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-right font-semibold">
-              <button type="button" onclick="removeAddonRow(this)" class="text-gray-400 hover:text-rose-600 font-bold px-1 text-sm">✕</button>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Volume / Pax *</label>
+                <select onchange="calculateTotal()" class="pax-select w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none bg-white" required>
+                  <option value="">-- Select Service --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Rate (PHP)</label>
+                <input type="number" readonly class="rate-input w-full bg-gray-100 border border-gray-300 rounded-lg p-2 text-xs font-semibold text-gray-700">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Add-ons (PHP)</label>
+                <input type="number" value="0" min="0" oninput="calculateTotal()" class="addon-input w-full border border-gray-300 rounded-lg p-2 text-xs font-semibold">
+              </div>
             </div>
           </div>
         </div>
@@ -133,27 +107,24 @@
 
       <hr class="border-gray-100">
 
-      <!-- Financial Calculation & Payment Status -->
+      <!-- 3. Payment & Total -->
       <div class="space-y-4">
         <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">3. Payment & Notes</h2>
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Payment Status</label>
           <select id="paymentStatus" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
-            <option>Pending</option>
-            <option>50% Deposit Paid</option>
-            <option>Fully Paid</option>
-            <option>Unpaid</option>
+            <option>Pending</option><option>50% Deposit Paid</option><option>Fully Paid</option><option>Unpaid</option>
           </select>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Notes / Special Requests</label>
-          <textarea id="notes" rows="3" placeholder="e.g. Preferred scent choices, venue setup instructions..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none"></textarea>
+          <textarea id="notes" rows="3" placeholder="e.g. Venue setup times, custom branding details..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none"></textarea>
         </div>
 
         <div class="bg-pink-50 p-4 rounded-xl flex justify-between items-center border border-pink-100">
-          <span class="text-sm font-bold text-pink-900">Calculated Total:</span>
+          <span class="text-sm font-bold text-pink-900">Grand Total (All Services):</span>
           <span id="displayTotal" class="text-2xl font-bold text-pink-800">₱0.00</span>
         </div>
       </div>
@@ -175,79 +146,103 @@
       if (savedUrl) {
         document.getElementById("webhookUrlInput").value = savedUrl;
         fetchPackagesFromSheet(savedUrl);
-      } else {
-        document.getElementById("syncIndicator").innerText = "Awaiting Webhook";
-        document.getElementById("syncIndicator").className = "text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded";
       }
     });
 
     function saveAndSync() {
       const url = document.getElementById("webhookUrlInput").value.trim();
-      if (!url) {
-        alert("Please enter a valid Webhook URL.");
-        return;
-      }
+      if (!url) return alert("Please enter a valid Webhook URL.");
       localStorage.setItem("memorabbylia_webhook_url", url);
       fetchPackagesFromSheet(url);
     }
 
     function fetchPackagesFromSheet(url) {
-      const indicator = document.getElementById("syncIndicator");
-      const status = document.getElementById("webhookStatus");
-
-      indicator.innerText = "Syncing...";
-      indicator.className = "text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded";
-
       fetch(url)
         .then(res => res.json())
         .then(data => {
           if (data.status === "success" && data.catalog) {
             packageCatalog = data.catalog;
-            populateServiceDropdown();
-            indicator.innerText = "✓ Live Synced";
-            indicator.className = "text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded";
-            status.innerText = "✓ Packages, Inclusions, and Rates synced live!";
-            status.className = "text-[11px] text-emerald-600 font-medium";
-          } else {
-            throw new Error("Invalid format");
+            populateAllServiceDropdowns();
+            document.getElementById("webhookStatus").innerText = "✓ Packages synced live!";
+            document.getElementById("webhookStatus").className = "text-[11px] text-emerald-600 font-medium";
           }
         })
         .catch(err => {
-          indicator.innerText = "Sync Failed";
-          indicator.className = "text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded";
-          status.innerText = "⚠ Could not fetch packages. Check Webhook URL.";
-          status.className = "text-[11px] text-rose-600 font-medium";
+          document.getElementById("webhookStatus").innerText = "⚠ Sync failed. Check Webhook URL.";
+          document.getElementById("webhookStatus").className = "text-[11px] text-rose-600 font-medium";
         });
     }
 
-    function populateServiceDropdown() {
-      const serviceSelect = document.getElementById("serviceSelected");
-      serviceSelect.innerHTML = '<option value="">-- Select Service --</option>';
-      serviceSelect.disabled = false;
-      serviceSelect.classList.remove("bg-gray-50");
-
-      Object.keys(packageCatalog).forEach(service => {
-        const opt = document.createElement("option");
-        opt.value = service;
-        opt.innerText = service;
-        serviceSelect.appendChild(opt);
+    function populateAllServiceDropdowns() {
+      document.querySelectorAll(".service-select").forEach(select => {
+        const selectedVal = select.value;
+        select.innerHTML = '<option value="">-- Select Service --</option>';
+        Object.keys(packageCatalog).forEach(service => {
+          const opt = document.createElement("option");
+          opt.value = service;
+          opt.innerText = service;
+          select.appendChild(opt);
+        });
+        select.value = selectedVal;
       });
     }
 
-    function updatePaxOptions() {
-      const service = document.getElementById("serviceSelected").value;
-      const paxSelect = document.getElementById("packagePax");
-      const inclusionsDisplay = document.getElementById("inclusionsDisplay");
-      
-      paxSelect.innerHTML = '<option value="">-- Select Pax --</option>';
-      
-      if (service && packageCatalog[service]) {
-        const incText = packageCatalog[service].inclusions || "Standard booth setup and inclusions.";
-        inclusionsDisplay.innerText = incText;
-        inclusionsDisplay.className = "bg-rose-50 border border-rose-200 rounded-lg p-3 text-xs text-rose-900 font-medium min-h-[42px] flex items-center";
+    function addServiceBlock() {
+      const container = document.getElementById("servicesContainer");
+      const block = document.createElement("div");
+      block.className = "service-block bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 relative";
+      block.innerHTML = `
+        <button type="button" onclick="removeServiceBlock(this)" class="absolute top-2 right-3 text-gray-400 hover:text-rose-600 font-bold text-sm">✕ Remove</button>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Service / Booth *</label>
+          <select onchange="updateServiceBlock(this)" class="service-select w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-white" required>
+            <option value="">-- Select Service --</option>
+          </select>
+        </div>
+        <div class="inclusions-box bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-500 italic">Select a Service / Booth above to view inclusions.</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Volume / Pax *</label>
+            <select onchange="calculateTotal()" class="pax-select w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none bg-white" required>
+              <option value="">-- Select Service --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Rate (PHP)</label>
+            <input type="number" readonly class="rate-input w-full bg-gray-100 border border-gray-300 rounded-lg p-2 text-xs font-semibold text-gray-700">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Add-ons (PHP)</label>
+            <input type="number" value="0" min="0" oninput="calculateTotal()" class="addon-input w-full border border-gray-300 rounded-lg p-2 text-xs font-semibold">
+          </div>
+        </div>
+      `;
+      container.appendChild(block);
+      populateAllServiceDropdowns();
+    }
 
-        paxSelect.disabled = false;
-        paxSelect.classList.remove("bg-gray-50");
+    function removeServiceBlock(btn) {
+      const container = document.getElementById("servicesContainer");
+      if (container.children.length > 1) {
+        btn.parentElement.remove();
+        calculateTotal();
+      } else {
+        alert("At least one service is required.");
+      }
+    }
+
+    function updateServiceBlock(selectElem) {
+      const block = selectElem.closest(".service-block");
+      const service = selectElem.value;
+      const paxSelect = block.querySelector(".pax-select");
+      const inclusionsDisplay = block.querySelector(".inclusions-box");
+
+      paxSelect.innerHTML = '<option value="">-- Select Pax --</option>';
+
+      if (service && packageCatalog[service]) {
+        inclusionsDisplay.innerText = packageCatalog[service].inclusions || "Standard booth setup.";
+        inclusionsDisplay.className = "inclusions-box bg-rose-50 border border-rose-200 rounded-lg p-2.5 text-xs text-rose-900 font-medium";
+
         const options = packageCatalog[service].options || {};
         Object.keys(options).forEach(pax => {
           const opt = document.createElement("option");
@@ -256,61 +251,31 @@
           paxSelect.appendChild(opt);
         });
       } else {
-        inclusionsDisplay.innerText = "Select a Service / Booth above to view package details and inclusions.";
-        inclusionsDisplay.className = "bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center";
-        paxSelect.disabled = true;
-        paxSelect.classList.add("bg-gray-50");
-      }
-      calculateTotal();
-    }
-
-    // Dynamic Add-ons List Functions
-    function addAddonRow() {
-      const container = document.getElementById("addonsContainer");
-      const div = document.createElement("div");
-      div.className = "addon-row flex gap-2 items-center";
-      div.innerHTML = `
-        <input type="text" placeholder="Item Name (e.g. Extra Staff, Custom Cards)" class="addon-desc w-2/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none">
-        <input type="number" placeholder="Amount (₱)" value="0" min="0" oninput="calculateTotal()" class="addon-amount w-1/3 border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none text-right font-semibold">
-        <button type="button" onclick="removeAddonRow(this)" class="text-gray-400 hover:text-rose-600 font-bold px-1 text-sm">✕</button>
-      `;
-      container.appendChild(div);
-    }
-
-    function removeAddonRow(btn) {
-      const container = document.getElementById("addonsContainer");
-      if (container.children.length > 1) {
-        btn.parentElement.remove();
-      } else {
-        // Reset single remaining row instead of deleting
-        const descInput = btn.parentElement.querySelector(".addon-desc");
-        const amtInput = btn.parentElement.querySelector(".addon-amount");
-        if (descInput) descInput.value = "";
-        if (amtInput) amtInput.value = "0";
+        inclusionsDisplay.innerText = "Select a Service / Booth above to view inclusions.";
+        inclusionsDisplay.className = "inclusions-box bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-500 italic";
       }
       calculateTotal();
     }
 
     function calculateTotal() {
-      const service = document.getElementById("serviceSelected").value;
-      const pax = document.getElementById("packagePax").value;
-      const qty = parseInt(document.getElementById("quantity").value) || 1;
-      
-      let rate = 0;
-      if (service && pax && packageCatalog[service] && packageCatalog[service].options && packageCatalog[service].options[pax]) {
-        rate = packageCatalog[service].options[pax];
-      }
+      let grandTotal = 0;
 
-      document.getElementById("unitRate").value = rate;
+      document.querySelectorAll(".service-block").forEach(block => {
+        const service = block.querySelector(".service-select").value;
+        const pax = block.querySelector(".pax-select").value;
+        const addon = parseFloat(block.querySelector(".addon-input").value) || 0;
+        const rateInput = block.querySelector(".rate-input");
 
-      // Sum up all dynamic add-on amounts
-      let totalAddons = 0;
-      document.querySelectorAll(".addon-amount").forEach(input => {
-        totalAddons += parseFloat(input.value) || 0;
+        let rate = 0;
+        if (service && pax && packageCatalog[service] && packageCatalog[service].options && packageCatalog[service].options[pax]) {
+          rate = packageCatalog[service].options[pax];
+        }
+
+        rateInput.value = rate;
+        grandTotal += rate + addon;
       });
 
-      const total = (rate * qty) + totalAddons;
-      document.getElementById("displayTotal").innerText = "₱" + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("displayTotal").innerText = "₱" + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     document.getElementById("bookingForm").addEventListener("submit", function(e) {
@@ -330,57 +295,44 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Submitting...";
 
-      // Calculate total add-on amount & build summary text for notes/sheet
-      let totalAddonsSum = 0;
-      let addonSummaryItems = [];
-
-      document.querySelectorAll(".addon-row").forEach(row => {
-        const desc = row.querySelector(".addon-desc").value.trim();
-        const amt = parseFloat(row.querySelector(".addon-amount").value) || 0;
-        if (amt > 0) {
-          totalAddonsSum += amt;
-          addonSummaryItems.push((desc || "Custom Add-on") + ": ₱" + amt);
-        }
+      let servicesList = [];
+      document.querySelectorAll(".service-block").forEach(block => {
+        servicesList.push({
+          serviceSelected: block.querySelector(".service-select").value,
+          packagePax: block.querySelector(".pax-select").value,
+          unitRate: block.querySelector(".rate-input").value,
+          quantity: 1,
+          taxAddons: block.querySelector(".addon-input").value || 0
+        });
       });
 
-      let finalNotes = document.getElementById("notes").value.trim();
-      if (addonSummaryItems.length > 0) {
-        finalNotes = "[ADD-ONS: " + addonSummaryItems.join(", ") + "] " + finalNotes;
-      }
-
-      const formData = {
+      const payload = {
         clientName: document.getElementById("clientName").value,
         eventDate: document.getElementById("eventDate").value,
         eventType: document.getElementById("eventType").value,
-        serviceSelected: document.getElementById("serviceSelected").value,
-        packagePax: document.getElementById("packagePax").value,
-        unitRate: document.getElementById("unitRate").value,
-        quantity: document.getElementById("quantity").value,
-        taxAddons: totalAddonsSum,
         paymentStatus: document.getElementById("paymentStatus").value,
-        notes: finalNotes
+        notes: document.getElementById("notes").value,
+        services: servicesList
       };
 
       fetch(scriptUrl, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
       .then(() => {
         statusMsg.classList.remove("hidden", "bg-rose-100", "text-rose-700");
         statusMsg.classList.add("bg-emerald-100", "text-emerald-800");
-        statusMsg.innerText = "✓ Booking submitted successfully!";
+        statusMsg.innerText = "✓ All booked services submitted successfully!";
         document.getElementById("bookingForm").reset();
         document.getElementById("webhookUrlInput").value = scriptUrl;
         document.getElementById("displayTotal").innerText = "₱0.00";
-        document.getElementById("inclusionsDisplay").innerText = "Select a Service / Booth above to view package details and inclusions.";
-        document.getElementById("inclusionsDisplay").className = "bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 italic min-h-[42px] flex items-center";
       })
       .catch(err => {
         statusMsg.classList.remove("hidden", "bg-emerald-100", "text-emerald-800");
         statusMsg.classList.add("bg-rose-100", "text-rose-700");
-        statusMsg.innerText = "Error submitting booking. Please check your Webhook URL.";
+        statusMsg.innerText = "Error submitting booking. Please check Webhook URL.";
       })
       .finally(() => {
         submitBtn.disabled = false;
