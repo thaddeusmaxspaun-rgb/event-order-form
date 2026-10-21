@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MemorABBYlia - Event Booking Entry</title>
+  <title>MemorABBYlia - Dynamic Event Booking Entry</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
@@ -23,7 +23,7 @@
     <!-- Form -->
     <form id="bookingForm" class="p-6 space-y-5">
       
-      <!-- Webhook Configuration Field -->
+      <!-- Webhook Configuration -->
       <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2">
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
           🔗 Google Sheet Webhook URL
@@ -31,15 +31,15 @@
         <div class="flex gap-2">
           <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" required
             class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-pink-500 focus:outline-none">
-          <button type="button" onclick="saveWebhookUrl()" 
+          <button type="button" onclick="saveAndSync()" 
             class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition whitespace-nowrap">
-            Save Webhook
+            Sync Packages
           </button>
         </div>
-        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Google Apps Script Web App URL here.</p>
+        <p id="webhookStatus" class="text-[11px] text-slate-500 italic">Paste your Apps Script Web App URL to load packages live.</p>
       </div>
 
-      <!-- Client & Event Info -->
+      <!-- Client Details -->
       <div class="space-y-4">
         <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">1. Client Details</h2>
         
@@ -70,38 +70,24 @@
 
       <hr class="border-gray-100">
 
-      <!-- Service Selection -->
+      <!-- Dynamic Package Selection -->
       <div class="space-y-4">
-        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Package Selection</h2>
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider">2. Package Selection</h2>
+          <span id="syncIndicator" class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Syncing with Sheet...</span>
+        </div>
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Service / Booth *</label>
-          <select id="serviceSelected" onchange="updatePaxOptions()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
-            <option value="">-- Select Service --</option>
-            <option value="Live Leather Stamping Booth">Live Leather Stamping Booth</option>
-            <option value="Saki Scented Flicker (Package 1 - 200ml)">Saki Scented Flicker (Package 1 - 200ml)</option>
-            <option value="Saki Scented Flicker (Package 2 - 120ml)">Saki Scented Flicker (Package 2 - 120ml)</option>
-            <option value="Saki Scented Flicker (Package 3 - 100ml)">Saki Scented Flicker (Package 3 - 100ml)</option>
-            <option value="Linen Spray (Package 1 - 50ml)">Linen Spray (Package 1 - 50ml)</option>
-            <option value="Linen Spray (Package 2 - 100ml)">Linen Spray (Package 2 - 100ml)</option>
-            <option value="Scented Moments (Package 1 - 10ml)">Scented Moments (Package 1 - 10ml)</option>
-            <option value="Scented Moments (Package 2 - 30ml)">Scented Moments (Package 2 - 30ml)</option>
-            <option value="Curated Scents (Live Diffuser Experience)">Curated Scents (Live Diffuser Experience)</option>
-            <option value="Lace & Luck">Lace & Luck</option>
-            <option value="Name Drop (Live Tote Bag Making)">Name Drop (Live Tote Bag Making)</option>
-            <option value="The Gentle Pump (Hand Soap Bar)">The Gentle Pump (Hand Soap Bar)</option>
-            <option value="Custom Hat Bar">Custom Hat Bar</option>
-            <option value="Riyo Tokyo Coffee Station (12 oz)">Riyo Tokyo Coffee Station (12 oz)</option>
-            <option value="Riyo Tokyo Coffee Station (16 oz)">Riyo Tokyo Coffee Station (16 oz)</option>
-            <option value="Frappe / Fusion Drinks (12 oz)">Frappe / Fusion Drinks (12 oz)</option>
-            <option value="Frappe / Fusion Drinks (16 oz)">Frappe / Fusion Drinks (16 oz)</option>
+          <select id="serviceSelected" onchange="updatePaxOptions()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
+            <option value="">-- Load Webhook First --</option>
           </select>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Pax / Volume *</label>
-            <select id="packagePax" onchange="calculateTotal()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none">
+            <select id="packagePax" onchange="calculateTotal()" disabled class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none bg-gray-50">
               <option value="">-- Select Pax --</option>
             </select>
           </div>
@@ -155,48 +141,71 @@
   </div>
 
   <script>
-    // Rates database according to MemorABBYlia package sheets
-    const packageCatalog = {
-      "Live Leather Stamping Booth": { "100 pax": 16100, "150 pax": 23900, "200 pax": 31700, "250 pax": 39500 },
-      "Saki Scented Flicker (Package 1 - 200ml)": { "100 pax": 29400, "150 pax": 38100, "200 pax": 78300 },
-      "Saki Scented Flicker (Package 2 - 120ml)": { "100 pax": 28300, "150 pax": 41600, "200 pax": 53300 },
-      "Saki Scented Flicker (Package 3 - 100ml)": { "100 pax": 22800, "150 pax": 23050, "200 pax": 42900 },
-      "Linen Spray (Package 1 - 50ml)": { "100 pax": 12800, "150 pax": 18950, "200 pax": 24900 },
-      "Linen Spray (Package 2 - 100ml)": { "100 pax": 22800, "150 pax": 33950, "200 pax": 44900 },
-      "Scented Moments (Package 1 - 10ml)": { "100 pax": 13850, "150 pax": 19700, "200 pax": 25100 },
-      "Scented Moments (Package 2 - 30ml)": { "100 pax": 41700, "150 pax": 61250, "200 pax": 80500 },
-      "Curated Scents (Live Diffuser Experience)": { "100 pax": 30600, "150 pax": 44750, "200 pax": 58600 },
-      "Lace & Luck": { "100 pax": 17200, "150 pax": 25550, "200 pax": 33900 },
-      "Name Drop (Live Tote Bag Making)": { "100 pax": 24944, "150 pax": 36350, "200 pax": 47300 },
-      "The Gentle Pump (Hand Soap Bar)": { "100 pax": 14900, "150 pax": 22350, "200 pax": 29800, "250 pax": 37250 },
-      "Custom Hat Bar": { "100 pax": 25000, "150 pax": 36750, "200 pax": 48000 },
-      "Riyo Tokyo Coffee Station (12 oz)": { "100 cups": 8500, "150 cups": 12750, "200 cups": 17000 },
-      "Riyo Tokyo Coffee Station (16 oz)": { "100 cups": 11500, "150 cups": 17250, "200 cups": 23000 },
-      "Frappe / Fusion Drinks (12 oz)": { "100 cups": 9000, "150 cups": 13500, "200 cups": 18000 },
-      "Frappe / Fusion Drinks (16 oz)": { "100 cups": 12000, "150 cups": 18000, "200 cups": 24000 }
-    };
+    let packageCatalog = {};
 
-    // Load saved Webhook URL on page load
     window.addEventListener("DOMContentLoaded", () => {
       const savedUrl = localStorage.getItem("memorabbylia_webhook_url");
       if (savedUrl) {
         document.getElementById("webhookUrlInput").value = savedUrl;
-        document.getElementById("webhookStatus").innerText = "✓ Saved Webhook URL loaded!";
-        document.getElementById("webhookStatus").className = "text-[11px] text-green-600 font-medium";
+        fetchPackagesFromSheet(savedUrl);
+      } else {
+        document.getElementById("syncIndicator").innerText = "Awaiting Webhook";
+        document.getElementById("syncIndicator").className = "text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded";
       }
     });
 
-    function saveWebhookUrl() {
+    function saveAndSync() {
       const url = document.getElementById("webhookUrlInput").value.trim();
-      const status = document.getElementById("webhookStatus");
       if (!url) {
-        status.innerText = "⚠ Please paste a valid Google Apps Script URL.";
-        status.className = "text-[11px] text-red-600 font-medium";
+        alert("Please enter a valid Webhook URL.");
         return;
       }
       localStorage.setItem("memorabbylia_webhook_url", url);
-      status.innerText = "✓ Webhook URL saved successfully!";
-      status.className = "text-[11px] text-green-600 font-medium";
+      fetchPackagesFromSheet(url);
+    }
+
+    function fetchPackagesFromSheet(url) {
+      const indicator = document.getElementById("syncIndicator");
+      const status = document.getElementById("webhookStatus");
+      const serviceSelect = document.getElementById("serviceSelected");
+
+      indicator.innerText = "Syncing...";
+      indicator.className = "text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded";
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success" && data.catalog) {
+            packageCatalog = data.catalog;
+            populateServiceDropdown();
+            indicator.innerText = "✓ Live Synced";
+            indicator.className = "text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded";
+            status.innerText = "✓ Packages synced live from Google Sheets!";
+            status.className = "text-[11px] text-emerald-600 font-medium";
+          } else {
+            throw new Error("Invalid format");
+          }
+        })
+        .catch(err => {
+          indicator.innerText = "Sync Failed";
+          indicator.className = "text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded";
+          status.innerText = "⚠ Could not fetch packages. Check Webhook URL.";
+          status.className = "text-[11px] text-rose-600 font-medium";
+        });
+    }
+
+    function populateServiceDropdown() {
+      const serviceSelect = document.getElementById("serviceSelected");
+      serviceSelect.innerHTML = '<option value="">-- Select Service --</option>';
+      serviceSelect.disabled = false;
+      serviceSelect.classList.remove("bg-gray-50");
+
+      Object.keys(packageCatalog).forEach(service => {
+        const opt = document.createElement("option");
+        opt.value = service;
+        opt.innerText = service;
+        serviceSelect.appendChild(opt);
+      });
     }
 
     function updatePaxOptions() {
@@ -205,12 +214,17 @@
       paxSelect.innerHTML = '<option value="">-- Select Pax --</option>';
       
       if (service && packageCatalog[service]) {
+        paxSelect.disabled = false;
+        paxSelect.classList.remove("bg-gray-50");
         Object.keys(packageCatalog[service]).forEach(pax => {
           const opt = document.createElement("option");
           opt.value = pax;
           opt.innerText = pax;
           paxSelect.appendChild(opt);
         });
+      } else {
+        paxSelect.disabled = true;
+        paxSelect.classList.add("bg-gray-50");
       }
       calculateTotal();
     }
@@ -238,9 +252,9 @@
       const statusMsg = document.getElementById("statusMessage");
 
       if (!scriptUrl) {
-        statusMsg.classList.remove("hidden", "bg-green-100", "text-green-800");
-        statusMsg.classList.add("bg-red-100", "text-red-700");
-        statusMsg.innerText = "Please enter and save your Webhook URL at the top before submitting.";
+        statusMsg.classList.remove("hidden", "bg-emerald-100", "text-emerald-800");
+        statusMsg.classList.add("bg-rose-100", "text-rose-700");
+        statusMsg.innerText = "Please enter and save your Webhook URL before submitting.";
         return;
       }
 
@@ -267,16 +281,16 @@
         body: JSON.stringify(formData)
       })
       .then(() => {
-        statusMsg.classList.remove("hidden", "bg-red-100", "text-red-700");
-        statusMsg.classList.add("bg-green-100", "text-green-800");
+        statusMsg.classList.remove("hidden", "bg-rose-100", "text-rose-700");
+        statusMsg.classList.add("bg-emerald-100", "text-emerald-800");
         statusMsg.innerText = "✓ Booking submitted successfully!";
         document.getElementById("bookingForm").reset();
         document.getElementById("webhookUrlInput").value = scriptUrl;
         document.getElementById("displayTotal").innerText = "₱0.00";
       })
       .catch(err => {
-        statusMsg.classList.remove("hidden", "bg-green-100", "text-green-800");
-        statusMsg.classList.add("bg-red-100", "text-red-700");
+        statusMsg.classList.remove("hidden", "bg-emerald-100", "text-emerald-800");
+        statusMsg.classList.add("bg-rose-100", "text-rose-700");
         statusMsg.innerText = "Error submitting booking. Please check your Webhook URL.";
       })
       .finally(() => {
